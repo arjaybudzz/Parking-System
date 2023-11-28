@@ -1,0 +1,2 @@
+class DuplicationError < StandardError
+end
