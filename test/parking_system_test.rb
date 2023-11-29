@@ -91,4 +91,17 @@ class ParkingSystemTest < Minitest::Test
     @parking_system.departing_time = Time.now + 86_400
     assert_equal(@parking_system.unpark(vehicle, entry_point, 1), 5_000)
   end
+
+  def test_leave_function
+    vehicle = Vehicle.new
+    entry_point = 'A'
+    vehicle.size = 'small'
+    parking_slot_size = 'Small'
+
+    @parking_system.add_parking_slot(entry_point, parking_slot_size)
+    @parking_system.park(vehicle)
+    @parking_system.departing_time = Time.now + 86_400
+    @parking_system.temporary_leave(vehicle, entry_point, 1, Time.now + 3_600, Time.now)
+    assert_equal(@parking_system.calculate_fee(@parking_system.parking_slots[entry_point].first[:parking_slot]), 5_000)
+  end
 end

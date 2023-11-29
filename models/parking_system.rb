@@ -63,9 +63,30 @@ class ParkingSystem
     add_vehicle(vehicle)
   end
 
-  def unpark(vehicle, entry_point, slot_number)
-    selected_slot = remove_vehicle(vehicle, entry_point, slot_number)
+  def unpark(vehicle_size, entry_point, slot_number)
+    selected_slot = remove_vehicle(vehicle_size, entry_point, slot_number)
     calculate_fee(selected_slot[:parking_slot])
+  end
+
+  def temporary_leave(vehicle, entry_point, slot_number, returning_time, exit_time = Time.now + 7_200)
+    difference = (returning_time - exit_time) / TIME_CONSTANTS[:SECONDS_PER_HOUR]
+
+    if difference > 1
+      @departing_time = exit_time
+      return unpark(vehicle, entry_point, slot_number)
+    end
+
+    return 0
+  end
+
+  def calculate_fee(parking_slot)
+    if excess(consumed).zero?
+      return daily_pay
+    elsif consumed > TIME_CONSTANTS[:HOURS_PER_DAY] && excess(consumed).positive?
+      return daily_pay + hourly_pay(parking_slot, excess(consumed))
+    else
+      return hourly_pay(parking_slot, consumed)
+    end
   end
 
   private
@@ -129,9 +150,9 @@ class ParkingSystem
     { occupying_vehicle_size: EMPTY, parking_slot: generate_parking_slot(size) }
   end
 
-  def find(vehicle, entry_point, slot_number)
+  def find(vehicle_size, entry_point, slot_number)
     parking_slots[entry_point].each_with_index do |parking_slot, index|
-      if parking_slot[:occupying_vehicle_size] == vehicle.to_s && parking_slot_number(index) == slot_number
+      if parking_slot[:occupying_vehicle_size] == vehicle_size && parking_slot_number(index) == slot_number
         return parking_slot
       end
     end
@@ -158,8 +179,8 @@ class ParkingSystem
     return nil
   end
 
-  def remove_vehicle(vehicle, entry_point, slot_number)
-    vehicle_info = find(vehicle, entry_point, slot_number)
+  def remove_vehicle(vehicle_size, entry_point, slot_number)
+    vehicle_info = find(vehicle_size, entry_point, slot_number)
 
     if vehicle_info.nil?
       raise InvalidInputError, "Entry point #{entry_point}, Slot number #{slot_number} is not occupying any vehicle"
@@ -167,10 +188,7 @@ class ParkingSystem
 
     vehicle_info[:occupying_vehicle_size] = EMPTY
     vehicle_info[:parking_slot].vacate
-    return vehicle_info
   end
-
-
 
   def daily_pay
     return RATES[:DAILY_RATE] * (consumed / TIME_CONSTANTS[:HOURS_PER_DAY]).to_i
@@ -181,15 +199,7 @@ class ParkingSystem
     return difference.to_f.ceil # to round up
   end
 
-  def calculate_fee(parking_slot)
-    if excess(consumed).zero?
-      return daily_pay
-    elsif consumed > TIME_CONSTANTS[:HOURS_PER_DAY] && excess(consumed).positive?
-      return daily_pay + hourly_pay(parking_slot, excess(consumed))
-    else
-      return hourly_pay(parking_slot, consumed)
-    end
-  end
+
 
   def excess(hour_time)
     return hour_time % TIME_CONSTANTS[:HOURS_PER_DAY]
