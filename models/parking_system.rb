@@ -4,13 +4,20 @@ class ParkingSystem
   MIN_ENTRY_POINTS = 3
   EMPTY = 'none'.freeze
   RATES = { FLAT_RATE: 40, SMALL_RATE: 20, MEDIUM_RATE: 60, LARGE_RATE: 100, DAILY_RATE: 5_000 }.freeze
+  TIME_CONSTANTS = { HOURS_PER_DAY: 24, SECONDS_PER_HOUR: 3_600, MINIMUM_HOURS: 3 }.freeze
 
-  attr_reader :parking_slots
+  attr_reader :parking_slots, :parking_time, :departing_time
 
-  def initialize(parking_slots: { A: [], B: [], C: [] })
-    @parking_slots = parking_slots.with_indifferent_access
-    @parking_time = Time.new
-    @departing_time = Time.new
+  def initialize
+    @parking_slots = defaults[:initial_entry_points]
+    @parking_time = defaults[:initial_time]
+    @departing_time = defaults[:initial_time]
+  end
+
+  def departing_time=(value)
+    raise InvalidInputError, "#{value} is not a valid time format" unless value.instance_of?(Time)
+
+    @departing_time = value
   end
 
   def add_entry_point(entry_point)
@@ -38,9 +45,18 @@ class ParkingSystem
   end
 
   def add_parking_slot(entry_point, parking_slot_size)
-    raise InvalidInputError, 'Please enter a valid input' unless entry_point.instance_of?(String)
+    parking_slots[entry_point].push(additional_parking_slot(parking_slot_size))
+  end
 
-    parking_slots[entry_point] << additional_parking_slot(parking_slot_size)
+  def remove_parking_slot(entry_point)
+    raise InvalidInputError, "Entry point #{entry_point} does not exist." unless already_exist?(entry_point)
+
+    unless parking_slots[entry_point].last[:occupying_vehicle_size] == EMPTY
+      raise InvalidInputError, 'The last parking slot is still occupied.'
+    end
+
+    parking_slots[entry_point].pop
+    parking_slots[entry_point]
   end
 
   def park(vehicle)
@@ -48,18 +64,11 @@ class ParkingSystem
   end
 
   def unpark(vehicle, entry_point, slot_number)
-    remove_vehicle(vehicle, entry_point, slot_number)
+    selected_slot = remove_vehicle(vehicle, entry_point, slot_number)
+    calculate_fee(selected_slot[:parking_slot])
   end
 
   private
-
-  def parking_time
-    @parking_time
-  end
-
-  def departing_time
-    @departing_time
-  end
 
   def entirely_available?(entry_point)
     parking_slots[entry_point].each do |parking_slot|
@@ -95,7 +104,7 @@ class ParkingSystem
   end
 
   def curr_num_entry_points
-    parking_slots.size
+    return parking_slots.size
   end
 
   def vehicle_fit?(vehicle, parking_slot)
@@ -111,7 +120,9 @@ class ParkingSystem
   end
 
   def generate_parking_slot(size)
-    ParkingSlot.new(size: size)
+    parking_slot = ParkingSlot.new
+    parking_slot.size = size
+    return parking_slot
   end
 
   def additional_parking_slot(size)
@@ -159,32 +170,45 @@ class ParkingSystem
     return vehicle_info
   end
 
-  def calculate_fee(parking_slot)
-    daily_pay(consumed) + additional_pay(parking_slot, consumed) + RATES[:FLAT_RATE]
-  end
 
-  def additional_pay(parking_slot, time_spent)
-    case parking_slot.to_s
-    when parking_slot.to_s == ParkingSlot::SIZES[:Small]
-      RATES[:SMALL_RATE] * time_spent
-    when parking_slot.to_s == ParkingSlot::SIZES[:Medium]
-      RATES[:MEDIUM_RATE] * time_spent
-    when parking_slot.to_s == ParkingSlot::SIZES[:Large]
-      RATES[:LARGE_RATE] * time_spent
-    end
-  end
 
-  def daily_pay(time_spent)
-    RATES[:DAILY_RATE] * time_spent % 24
+  def daily_pay
+    return RATES[:DAILY_RATE] * (consumed / TIME_CONSTANTS[:HOURS_PER_DAY]).to_i
   end
 
   def consumed
-    hourly_time = (departing_time - parking_time) / 3_600
+    difference = format('%.2f', ((departing_time - parking_time) / TIME_CONSTANTS[:SECONDS_PER_HOUR]))
+    return difference.to_f.ceil # to round up
+  end
 
-    return 0 if hourly_time < 3
+  def calculate_fee(parking_slot)
+    if excess(consumed).zero?
+      return daily_pay
+    elsif consumed > TIME_CONSTANTS[:HOURS_PER_DAY] && excess(consumed).positive?
+      return daily_pay + hourly_pay(parking_slot, excess(consumed))
+    else
+      return hourly_pay(parking_slot, consumed)
+    end
+  end
 
-    return hourly_time % 24 if hourly_time >= 24
+  def excess(hour_time)
+    return hour_time % TIME_CONSTANTS[:HOURS_PER_DAY]
+  end
 
-    return hourly_time
+  def hourly_pay(parking_slot, time_spent)
+    return RATES[:FLAT_RATE] if time_spent <= TIME_CONSTANTS[:MINIMUM_HOURS]
+
+    case parking_slot.to_s
+    when 'Small'
+      RATES[:SMALL_RATE] * (time_spent - TIME_CONSTANTS[:MINIMUM_HOURS]) + RATES[:FLAT_RATE]
+    when 'Medium'
+      RATES[:MEDIUM_RATE] * (time_spent - TIME_CONSTANTS[:MINIMUM_HOURS]) + RATES[:FLAT_RATE]
+    when 'Large'
+      RATES[:LARGE_RATE] * (time_spent - TIME_CONSTANTS[:MINIMUM_HOURS]) + RATES[:FLAT_RATE]
+    end
+  end
+
+  def defaults
+    { initial_entry_points: { A: [], B: [], C: [] }.with_indifferent_access, initial_time: Time.now }
   end
 end

@@ -65,4 +65,30 @@ class ParkingSystemTest < Minitest::Test
 
     assert(@parking_system.park(vehicle))
   end
+=begin
+  def test_calculate_fee
+    vehicle = Vehicle.new
+    entry_point = 'A'
+    vehicle.size = 'small'
+    parking_slot_size = 'Small'
+
+    @parking_system.add_parking_slot(entry_point, parking_slot_size)
+    parking_slot = @parking_system.parking_slots[entry_point].first[:parking_slot]
+    @parking_system.departing_time = Time.now + 86_400
+
+    assert_equal(@parking_system.calculate_fee(parking_slot), 5_000)
+  end
+=end
+
+  def test_unpark_function
+    vehicle = Vehicle.new
+    entry_point = 'A'
+    vehicle.size = 'small'
+    parking_slot_size = 'Small'
+
+    @parking_system.add_parking_slot(entry_point, parking_slot_size)
+    @parking_system.park(vehicle)
+    @parking_system.departing_time = Time.now + 86_400
+    assert_equal(@parking_system.unpark(vehicle, entry_point, 1), 5_000)
+  end
 end
