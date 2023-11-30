@@ -65,9 +65,11 @@ begin
 
   # the vehicle will come back in less than an hour
   # parking_system.temporary_leave(vehicle, first_entry_point, 1, Time.now + (3_600 * 6.5), Time.now + (3_600 * 6))
+  # parking_system.unpark(vehicle, first_entry_point, 1)
 
   # the vehicle will come back after more than an hour (4 hours in this case.)
   # parking_system.temporary_leave(vehicle, first_entry_point, 1, Time.now + (3_600 * 10), Time.now + (3_600 * 6))
+  # parking_system.unpark(vehicle, first_entry_point, 1)
 
 rescue InvalidSizeError => e
   print "Invalid operation: #{e.message}"
