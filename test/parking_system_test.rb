@@ -42,7 +42,7 @@ class ParkingSystemTest < Minitest::Test
   end
 
 =begin
-  def test_check_vacancies_if_vehicle_size_is_equal_to_parking_slot_size
+  def test_check_vacancies_if_vehicle_size_is_equal_to_parking_slot_size (private function)
     entry_point = 'A'
     parking_slot_size = 'small'
     vehicle_sample = Vehicle.new
