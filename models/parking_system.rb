@@ -83,7 +83,7 @@ class ParkingSystem
   end
 
   # It is assumed here that the exit time is 1 hour after the initial parking time.
-  def temporary_leave(vehicle, entry_point, slot_number, returning_time, exit_time = Time.now + TIME_CONSTANTS[:SECONDS_PER_HOUR])
+  def temporary_leave(vehicle, entry_point, slot_number, returning_time, exit_time = defaults[:initial_time] + TIME_CONSTANTS[:SECONDS_PER_HOUR])
     difference = (returning_time - exit_time) / TIME_CONSTANTS[:SECONDS_PER_HOUR]
 
     if difference > 1
