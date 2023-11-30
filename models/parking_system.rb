@@ -51,7 +51,7 @@ class ParkingSystem
     puts "Parking Slot of size #{parking_slot_size} has been added to entry point #{entry_point}."
   end
 
-  def remove_parking_slot(entry_point)
+  def remove_parking_slot(entry_point) # You cannot remove a parking slot at the middle
     raise InvalidInputError, "Entry point #{entry_point} does not exist." unless already_exist?(entry_point)
 
     unless parking_slots[entry_point].last[:occupying_vehicle_size] == EMPTY
