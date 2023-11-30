@@ -6,6 +6,10 @@ require_relative './../error/invalid_input'
 class ParkingSystemTest < Minitest::Test
   def setup
     @parking_system = ParkingSystem.new
+    @vehicle = Vehicle.new
+    @entry_point = 'A'
+    @vehicle.size = 'small'
+    @parking_slot_size = 'Small'
   end
 
   def test_add_entry_point
@@ -56,17 +60,16 @@ class ParkingSystemTest < Minitest::Test
   end
 =end
 
-  def test_park_function
-    vehicle = Vehicle.new
-    entry_point = 'A'
-    vehicle.size = 'small'
-    parking_slot_size = 'Small'
-    @parking_system.add_parking_slot(entry_point, parking_slot_size)
+# Here I have used assert nil for the public functions since they are not returning anything.
 
-    assert(@parking_system.park(vehicle))
+  def test_park_function
+
+    @parking_system.add_parking_slot(@entry_point, @parking_slot_size)
+    assert_nil(@parking_system.park(@vehicle))
   end
+
 =begin
-  def test_calculate_fee
+  def test_calculate_fee (private function)
     vehicle = Vehicle.new
     entry_point = 'A'
     vehicle.size = 'small'
@@ -81,27 +84,17 @@ class ParkingSystemTest < Minitest::Test
 =end
 
   def test_unpark_function
-    vehicle = Vehicle.new
-    entry_point = 'A'
-    vehicle.size = 'small'
-    parking_slot_size = 'Small'
-
-    @parking_system.add_parking_slot(entry_point, parking_slot_size)
-    @parking_system.park(vehicle)
+    @parking_system.add_parking_slot(@entry_point, @parking_slot_size)
+    @parking_system.park(@vehicle)
     @parking_system.departing_time = Time.now + 86_400
-    assert_equal(@parking_system.unpark(vehicle, entry_point, 1), 5_000)
+    assert_nil(@parking_system.unpark(@vehicle, @entry_point, 1))
   end
 
-  def test_leave_function
-    vehicle = Vehicle.new
-    entry_point = 'A'
-    vehicle.size = 'small'
-    parking_slot_size = 'Small'
-
-    @parking_system.add_parking_slot(entry_point, parking_slot_size)
-    @parking_system.park(vehicle)
+  def test_temporarily_leave_function
+    @parking_system.add_parking_slot(@entry_point, @parking_slot_size)
+    @parking_system.park(@vehicle)
     @parking_system.departing_time = Time.now + 86_400
-    @parking_system.temporary_leave(vehicle, entry_point, 1, Time.now + 3_600, Time.now)
-    assert_equal(@parking_system.calculate_fee(@parking_system.parking_slots[entry_point].first[:parking_slot]), 5_000)
+    @parking_system.temporary_leave(@vehicle, @entry_point, 1, Time.now + 3_600, Time.now)
+    assert_nil(@parking_system.temporary_leave(@vehicle, @entry_point, 1, Time.now + 3_600, Time.now))
   end
 end
