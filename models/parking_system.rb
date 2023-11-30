@@ -82,7 +82,7 @@ class ParkingSystem
     print "Please pay an amount of P#{fee}"
   end
 
-  # It is assumed here that the exit time is 3 hours after the parking time.
+  # It is assumed here that the exit time is 2 hours after the initial parking time.
   def temporary_leave(vehicle, entry_point, slot_number, returning_time, exit_time = Time.now + 7_200)
     difference = (returning_time - exit_time) / TIME_CONSTANTS[:SECONDS_PER_HOUR]
 
