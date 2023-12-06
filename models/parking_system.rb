@@ -47,6 +47,8 @@ class ParkingSystem
   end
 
   def add_parking_slot(entry_point, parking_slot_size)
+    raise InvalidInputError, "Entry point #{entry_point} does not exist." unless already_exist?(entry_point)
+
     parking_slots[entry_point].push(additional_parking_slot(parking_slot_size))
     puts "Parking Slot of size #{parking_slot_size} has been added to entry point #{entry_point}."
   end
@@ -79,17 +81,20 @@ class ParkingSystem
   def unpark(vehicle, entry_point, slot_number)
     selected_slot = remove_vehicle(vehicle, entry_point, slot_number)
     fee = format('%.2f', calculate_fee(selected_slot[:parking_slot]))
-    print "Please pay an amount of P#{fee}"
+    print "Please pay an amount of P#{fee}\n"
   end
 
   # It is assumed here that the exit time is 1 hour after the initial parking time.
   def temporary_leave(vehicle, entry_point, slot_number, returning_time, exit_time = defaults[:initial_time] + TIME_CONSTANTS[:SECONDS_PER_HOUR])
+    raise InvalidInputError, 'Returning time must be greater than exit time' if returning_time < exit_time
+
     difference = (returning_time - exit_time) / TIME_CONSTANTS[:SECONDS_PER_HOUR]
 
     if difference > 1
       @departing_time = exit_time
       unpark(vehicle, entry_point, slot_number)
       @parking_time = returning_time
+      park(vehicle)
     end
 
     return
@@ -97,6 +102,7 @@ class ParkingSystem
 
   private
 
+  # Checks the entire parking slot to see if there is a vehicle occupying
   def entirely_available?(entry_point)
     parking_slots[entry_point].each do |parking_slot|
       return false unless parking_slot[:parking_slot].vacant?
@@ -105,16 +111,19 @@ class ParkingSystem
     return true
   end
 
+  # Checks a parking slot to see if it's empty and it is compatible with the vehicle
   def available?(vehicle, parking_slot)
     return true if parking_slot.vacant? && vehicle_fit?(vehicle, parking_slot)
 
     return false
   end
 
+
   def already_exist?(entry_point)
     return parking_slots.key?(entry_point)
   end
 
+  # returns a vacant parking slot for the vehicle
   def check_vacancy(entry_point, vehicle)
     available_slot = {}
 
@@ -206,16 +215,6 @@ class ParkingSystem
     return difference.to_f.ceil # to round up
   end
 
-  def calculate_fee(parking_slot)
-    if excess(consumed).zero?
-      return daily_pay
-    elsif consumed > TIME_CONSTANTS[:HOURS_PER_DAY] && excess(consumed).positive?
-      return daily_pay + hourly_pay(parking_slot, excess(consumed))
-    else
-      return hourly_pay(parking_slot, consumed)
-    end
-  end
-
   def excess(hour_time)
     return hour_time % TIME_CONSTANTS[:HOURS_PER_DAY]
   end
@@ -230,6 +229,16 @@ class ParkingSystem
       RATES[:MEDIUM_RATE] * (time_spent - TIME_CONSTANTS[:MINIMUM_HOURS]) + RATES[:FLAT_RATE]
     when 'Large'
       RATES[:LARGE_RATE] * (time_spent - TIME_CONSTANTS[:MINIMUM_HOURS]) + RATES[:FLAT_RATE]
+    end
+  end
+
+  def calculate_fee(parking_slot)
+    if excess(consumed).zero?
+      return daily_pay
+    elsif consumed > TIME_CONSTANTS[:HOURS_PER_DAY] && excess(consumed).positive?
+      return daily_pay + hourly_pay(parking_slot, excess(consumed))
+    else
+      return hourly_pay(parking_slot, consumed)
     end
   end
 

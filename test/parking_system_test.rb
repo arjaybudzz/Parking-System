@@ -56,7 +56,7 @@ class ParkingSystemTest < Minitest::Test
       start += 1
     end
 
-    assert_equal(@parking_system.allocate_vacancy(entry_point, vehicle_sample), { available: @parking_system.parking_slots[entry_point].first, slot_number: 1, entry_point: entry_point })
+    assert_equal(@parking_system.check_vacancy(entry_point, vehicle_sample), { available: @parking_system.parking_slots[entry_point].first, slot_number: 1, entry_point: entry_point })
   end
 =end
 
