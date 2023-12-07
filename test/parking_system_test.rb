@@ -41,6 +41,14 @@ class ParkingSystemTest < Minitest::Test
     assert_equal(@parking_system.parking_slots[entry_point].size, 1)
   end
 
+  def test_remove_parking_slot
+    parking_slot_size = 'small'
+    entry_point = 'A'
+    @parking_system.add_parking_slot(entry_point, parking_slot_size)
+    @parking_system.remove_parking_slot(entry_point)
+    assert_equal(@parking_system.parking_slots[entry_point].size, 0)
+  end
+
 =begin
   def test_check_vacancies_if_vehicle_size_is_equal_to_parking_slot_size (private function)
     entry_point = 'A'

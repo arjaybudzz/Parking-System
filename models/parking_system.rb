@@ -16,6 +16,7 @@ class ParkingSystem
 
   def departing_time=(value)
     raise InvalidInputError, "#{value} is not a valid time format" unless value.instance_of?(Time)
+    raise InvalidInputError, "#{value} must be greater than the parking time." if value < parking_time
 
     @departing_time = value
   end
@@ -102,41 +103,12 @@ class ParkingSystem
 
   private
 
-  # Checks the entire parking slot to see if there is a vehicle occupying
-  def entirely_available?(entry_point)
-    parking_slots[entry_point].each do |parking_slot|
-      return false unless parking_slot[:parking_slot].vacant?
-    end
-
-    return true
+  def defaults
+    { initial_entry_points: { A: [], B: [], C: [] }.with_indifferent_access, initial_time: Time.now }
   end
-
-  # Checks a parking slot to see if it's empty and it is compatible with the vehicle
-  def available?(vehicle, parking_slot)
-    return true if parking_slot.vacant? && vehicle_fit?(vehicle, parking_slot)
-
-    return false
-  end
-
 
   def already_exist?(entry_point)
     return parking_slots.key?(entry_point)
-  end
-
-  # returns a vacant parking slot for the vehicle
-  def check_vacancy(entry_point, vehicle)
-    available_slot = {}
-
-    parking_slots[entry_point].each_with_index do |parking_slot, index|
-      if available?(vehicle, parking_slot[:parking_slot])
-        available_slot[:available] = parking_slot
-        available_slot[:slot_number] = parking_slot_number(index)
-        available_slot[:entry_point] = entry_point
-        break
-      end
-    end
-
-    return available_slot
   end
 
   def curr_num_entry_points
@@ -165,6 +137,38 @@ class ParkingSystem
     { occupying_vehicle_size: EMPTY, parking_slot: generate_parking_slot(size) }
   end
 
+  # Checks the entire parking slot to see if there is a vehicle occupying
+  def entirely_available?(entry_point)
+    parking_slots[entry_point].each do |parking_slot|
+      return false unless parking_slot[:parking_slot].vacant?
+    end
+
+    return true
+  end
+
+  # Checks a parking slot to see if it's empty and it is compatible with the vehicle
+  def available?(vehicle, parking_slot)
+    return true if parking_slot.vacant? && vehicle_fit?(vehicle, parking_slot)
+
+    return false
+  end
+
+  # returns a vacant parking slot for the vehicle
+  def check_vacancy(entry_point, vehicle)
+    available_slot = {}
+
+    parking_slots[entry_point].each_with_index do |parking_slot, index|
+      if available?(vehicle, parking_slot[:parking_slot])
+        available_slot[:available] = parking_slot
+        available_slot[:slot_number] = parking_slot_number(index)
+        available_slot[:entry_point] = entry_point
+        break
+      end
+    end
+
+    return available_slot
+  end
+
   def find(vehicle, entry_point, slot_number)
     parking_slots[entry_point].each_with_index do |parking_slot, index|
       if parking_slot[:occupying_vehicle_size] == vehicle.to_s && parking_slot_number(index) == slot_number
@@ -176,7 +180,9 @@ class ParkingSystem
   end
 
   def add_vehicle(vehicle)
-    raise InvalidInputError, 'Invalid vehicle type input' unless vehicle.instance_of?(Vehicle)
+    unless vehicle.instance_of?(Vehicle)
+      raise InvalidInputError, "Expected argument of type Vehicle but receives argument of type #{vehicle.class}"
+    end
 
     available_slot = {}
 
@@ -206,13 +212,13 @@ class ParkingSystem
     return vehicle_info
   end
 
-  def daily_pay
-    return RATES[:DAILY_RATE] * (consumed / TIME_CONSTANTS[:HOURS_PER_DAY]).to_i
-  end
-
   def consumed
     difference = format('%.2f', ((departing_time - parking_time) / TIME_CONSTANTS[:SECONDS_PER_HOUR]))
     return difference.to_f.ceil # to round up
+  end
+
+  def daily_pay
+    return RATES[:DAILY_RATE] * (consumed / TIME_CONSTANTS[:HOURS_PER_DAY]).to_i
   end
 
   def excess(hour_time)
@@ -240,9 +246,5 @@ class ParkingSystem
     else
       return hourly_pay(parking_slot, consumed)
     end
-  end
-
-  def defaults
-    { initial_entry_points: { A: [], B: [], C: [] }.with_indifferent_access, initial_time: Time.now }
   end
 end
