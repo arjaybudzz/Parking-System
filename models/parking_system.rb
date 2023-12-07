@@ -23,7 +23,7 @@ class ParkingSystem
 
   def add_entry_point(entry_point)
     unless entry_point.instance_of?(String) || entry_point.instance_of?(Integer)
-      raise InvalidInputError, 'Please enter a valid input'
+      raise InvalidInputError, "Expected type String or Integer but received type #{entry_point.class}"
     end
 
     raise DuplicationError, 'Entry point already exists.' if already_exist?(entry_point)
@@ -99,6 +99,17 @@ class ParkingSystem
     end
 
     return
+  end
+
+  def view_map
+    parking_slots.each_pair do |entry_point, parking_slot|
+      puts "-----------AT ENTRY POINT #{entry_point.capitalize}---------------"
+      parking_slot.each_with_index do |parking_slot_info, index|
+        puts "Parking slot size: #{parking_slot_info[:parking_slot]}"
+        puts "Occupying vehicle size: #{parking_slot_info[:occupying_vehicle_size]}"
+        puts "Slot number: #{parking_slot_number(index)}"
+      end
+    end
   end
 
   private

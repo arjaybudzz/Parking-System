@@ -49,6 +49,30 @@ class ParkingSystemTest < Minitest::Test
     assert_equal(@parking_system.parking_slots[entry_point].size, 0)
   end
 
+
+
+# Here I have used assert nil for the public functions since they are not returning anything.
+
+  def test_park_function
+    @parking_system.add_parking_slot(@entry_point, @parking_slot_size)
+    assert_nil(@parking_system.park(@vehicle))
+  end
+
+  def test_unpark_function
+    @parking_system.add_parking_slot(@entry_point, @parking_slot_size)
+    @parking_system.park(@vehicle)
+    @parking_system.departing_time = Time.now + 86_400
+    assert_nil(@parking_system.unpark(@vehicle, @entry_point, 1))
+  end
+
+  def test_temporarily_leave_function
+    @parking_system.add_parking_slot(@entry_point, @parking_slot_size)
+    @parking_system.park(@vehicle)
+    @parking_system.departing_time = Time.now + 86_400
+    @parking_system.temporary_leave(@vehicle, @entry_point, 1, Time.now + 3_600, Time.now)
+    assert_nil(@parking_system.temporary_leave(@vehicle, @entry_point, 1, Time.now + 3_600, Time.now))
+  end
+
 =begin
   def test_check_vacancies_if_vehicle_size_is_equal_to_parking_slot_size (private function)
     entry_point = 'A'
@@ -68,14 +92,6 @@ class ParkingSystemTest < Minitest::Test
   end
 =end
 
-# Here I have used assert nil for the public functions since they are not returning anything.
-
-  def test_park_function
-
-    @parking_system.add_parking_slot(@entry_point, @parking_slot_size)
-    assert_nil(@parking_system.park(@vehicle))
-  end
-
 =begin
   def test_calculate_fee (private function)
     vehicle = Vehicle.new
@@ -90,19 +106,4 @@ class ParkingSystemTest < Minitest::Test
     assert_equal(@parking_system.calculate_fee(parking_slot), 5_000)
   end
 =end
-
-  def test_unpark_function
-    @parking_system.add_parking_slot(@entry_point, @parking_slot_size)
-    @parking_system.park(@vehicle)
-    @parking_system.departing_time = Time.now + 86_400
-    assert_nil(@parking_system.unpark(@vehicle, @entry_point, 1))
-  end
-
-  def test_temporarily_leave_function
-    @parking_system.add_parking_slot(@entry_point, @parking_slot_size)
-    @parking_system.park(@vehicle)
-    @parking_system.departing_time = Time.now + 86_400
-    @parking_system.temporary_leave(@vehicle, @entry_point, 1, Time.now + 3_600, Time.now)
-    assert_nil(@parking_system.temporary_leave(@vehicle, @entry_point, 1, Time.now + 3_600, Time.now))
-  end
 end
